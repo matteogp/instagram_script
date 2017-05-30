@@ -1,14 +1,35 @@
-followers = open("d1.txt")
-following = open("d2.txt")
+file1 = open("d1.txt")
+file2 = open("d2.txt")
 
-followers.strip()
-following.strip()
+following = file2.readlines()
+followers = file1.readlines()
 
 outliers = []
 
-for dude in following:
-  if dude not in followers:
-    outliers.append(dude)
+def  cleanup(lst):
+  name = False
+  for f in lst:
+    f.strip()
+    if (f == "" or f ==" "):
+      del f
+    elif (f == "Verified"):
+      del f
+    elif (name == False):
+      name = True
+    else:
+      del f
+      name = False
+
+cleanup(followers)
+cleanup(following)
+
+print("stripped!")
+
+for account in following:
+  if account not in followers:
+    outliers.append(account)
     
+print ("read!\n")
+
 for decision in outliers:
-  print(decision + "\n")
+  print(decision)
