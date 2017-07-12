@@ -19,11 +19,7 @@ def strip_list (lst):
   return newlst
 
 followers = strip_list(followers)
-print("--")
 following = strip_list(following)
-
-print (followers)
-print (following)
 
 for account in following:
   if account not in followers:
