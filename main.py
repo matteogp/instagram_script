@@ -18,11 +18,12 @@ def strip_list (lst):
       alt+=1
   return newlst
 
-followers = strip_list(followers)
+#followers = strip_list(followers)
+print("--")
 following = strip_list(following)
 
 for account in following:
   if account not in followers:
     unfollow.append(account)
     print(account + "\n")
-    
+  
