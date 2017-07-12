@@ -7,10 +7,10 @@ following = file2.readlines()
 unfollow = []
 
 def strip_list (lst):
-  alt = 1
+  alt = 2
   newlst = []
   for f in lst:
-    if (alt==2):
+    if (alt==3):
       f.strip()
       alt = 0
       newlst.append(f)
