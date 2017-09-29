@@ -4,7 +4,7 @@ Currently just uses manually copied/pasted text files
 
 To do:
 - ~Cleanup input to remove actual names, sticking just to usernames~
-- Output to another file instead of just printing
-- Extract directly from account
-  - via HTML file?
-  - ~Does instagram have an API?~ - it does, but I'd need a dev license
+- Retrieve account page by username
+- Scrape both followers/following for a given account
+- Format into list
+- Refactor output
