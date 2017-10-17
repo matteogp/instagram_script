@@ -9,8 +9,8 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
 from selenium.common.exceptions import NoSuchElementException
-from selenium.webdriver.support.ui import WebDriverWait # available since 2.4.0
-from selenium.webdriver.support import expected_conditions as EC # available since 2.26.0
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 # function definitions
 
@@ -113,10 +113,15 @@ def compare_ff(followers, following):
         if a not in followers: accounts.append(a)
     return accounts
 
+#logout of account from profile page
+def logout (driver):
+    driver.find_element_by_xpath("//button[text()='Options']").click()
+    driver.find_element_by_xpath("//button[text()='Log Out']").click()
+
 # main script
 
 # Create a new instance of the Chrome web driver
-driver = webdriver.Chrome('/Users/mgp/Documents/Dev/executables/chromedriver')
+driver = webdriver.Chrome('executables/chromedriver')
 
 # repeatedly attempt to login, allowing user to re-enter credentials if there is an error
 while (True):
@@ -133,3 +138,5 @@ following = get_following(driver, username)
 outliers = compare_ff(followers, following)
 pp = pprint.PrettyPrinter(indent=4)
 pp.pprint(outliers)
+logout(driver)
+driver.close()
