@@ -1,5 +1,10 @@
 # instagram_script
 
-The script generates a list of accounts that don't follow back a given Instagram account.
+Currently just uses manually copied/pasted text files
 
-Using selenium, a chrome window is opened, an Instagram account logged into, and has it's followers/following read by navigating to the account page and scrolling the full list of followers/following.
+To do:
+- ~Cleanup input to remove actual names, sticking just to usernames~
+- Retrieve account page by username
+- Scrape both followers/following for a given account
+- Format into list
+- Refactor output
