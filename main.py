@@ -1,12 +1,18 @@
-import sys
+# Matteo Palarchio
+# matteogp.github.io
+
+# debug bool to control tracing
+debug = False
+
+import sys, time, pprint, getpass
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.support.ui import WebDriverWait # available since 2.4.0
 from selenium.webdriver.support import expected_conditions as EC # available since 2.26.0
-# Create a new instance of the Chrome driver
-driver = webdriver.Chrome('/Users/mgp/Documents/Dev/executables/chromedriver')
+
+# function definitions
 
 # login to instagram account with given credentials & navigate to account page
 #   user may be prompted if they have secondary verification enabled to provide
@@ -15,7 +21,7 @@ def login(driver, user, p):
 
     # navigate to login page & enter user credentials
     driver.get("https://www.instagram.com/accounts/login/")
-    driver.find_element_by_xpath("//div/input[@name='username']").send_keys(user)
+    driver.find_element_by_xpath("//input[@name='username']").send_keys(user)
     driver.find_element_by_xpath("//div/input[@name='password']").send_keys(p)
     driver.find_element_by_xpath("//span/button").click()
 
@@ -24,91 +30,106 @@ def login(driver, user, p):
     attemptlogin = True
 
     # try login procedure, only exit if there is a sucess or displayed error message
+    # attempting to catch the exceptions that can arise during login process & handle them
     while (True):
         try:
-            WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.LINK_TEXT, "See All")))
+            WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.LINK_TEXT, "Profile")))
+            if (debug): print "Sucess"
             break
         except TimeoutException:
+            if (debug): print "Initial Attempt Failed"
             try:
                 desc = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.ID, "verificationCodeDescription")))
                 print desc.text
-                vercode = input(">")
+                vercode = raw_input(">")
                 driver.find_element_by_xpath("//div/input[@name='verificationCode']").clear()
                 driver.find_element_by_xpath("//div/input[@name='verificationCode']").send_keys(vercode)
                 driver.find_element_by_xpath("//span/button").click()
                 WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.XPATH, "//input[@placeholder='Search']")))
+                if (debug): print "Verified"
                 break
             except TimeoutException:
-                try:
-                    msg = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.ID, "Error")))
-                    return msg
-                except TimeoutException: continue
+                if (debug): print "Error Handling"
+                msg = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.XPATH, '//form/div/p[@role="alert"]'))).text
+                return msg.encode("utf-8")
 
+    # reached if the login is successful
     driver.find_element_by_xpath("//a[text()='Profile']").click()
     return True
 
-def get_followers(driver, user):
-    WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.XPATH, ("//h1[@title='{0}']").format(user))))
-    driver.find_element_by_partial_link_text("follower").click()
-    wait = WebDriverWait(driver, 2)
-    find_followers = driver.find_elements_by_xpath("//div[@style='position: relative; z-index: 1;']//ul/li/div/div/div/div/a")
-    print "yay"
-    return [e.text for e in find_followers]
+# scroll to bottom of a given element
+def scroll_element_to_bottom(elem):
+    current = 1
+    prev = 0
 
+    #repeatedly scroll down until no change happens from scrolling (reach bottom)
+    while (current != prev):
+        prev = current
+        current = driver.execute_script('return arguments[0].scrollHeight', elem)
+        if (debug): print "prev", prev, "current", current
+        driver.execute_script('arguments[0].scrollTop = arguments[0].scrollHeight', elem)
+        time.sleep(1.5)
+
+# open the followers from a profile, browse all and return a list of usernames
+def get_followers(driver, user):
+    WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.XPATH, ('//h1'))))
+
+    driver.find_element_by_partial_link_text("follower").click()
+
+    WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.XPATH, '//span/button[text()="Following"]')))
+
+    modal = driver.find_element_by_class_name('_gs38e')
+    scroll_element_to_bottom(modal)
+
+    find_followers = driver.find_elements(By.XPATH, "//ul/li/div/div/div/div/a")
+    retlist = [e.text.encode("utf-8") for e in find_followers]
+    driver.execute_script("window.history.go(-1)")
+    driver.refresh()
+    time.sleep(1.5)
+    return retlist
+
+# open who is followed by a profile, browse all and return a list of usernames
 def get_following(driver, user):
-    WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.XPATH, ("//h1[@title='{0}']").format(user))))
+    WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.XPATH, ('//h1'))))
+
     driver.find_element_by_partial_link_text("following").click()
 
+    WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.XPATH, '//span/button[text()="Following"]')))
 
+    modal = driver.find_element_by_class_name('_gs38e')
+    scroll_element_to_bottom(modal)
 
+    find_following = driver.find_elements(By.XPATH, "//ul/li/div/div/div/div/a")
+    retlist = [e.text.encode("utf-8") for e in find_following]
+    driver.execute_script("window.history.go(-1)")
+    driver.refresh()
+    time.sleep(1.5)
+    return retlist
+
+# given lists of followers and following, return a list of usernames that don't follow back
+def compare_ff(followers, following):
+    accounts = []
+    for a in following:
+        if a not in followers: accounts.append(a)
+    return accounts
+
+# main script
+
+# Create a new instance of the Chrome web driver
+driver = webdriver.Chrome('/Users/mgp/Documents/Dev/executables/chromedriver')
 
 # repeatedly attempt to login, allowing user to re-enter credentials if there is an error
-'''
 while (True):
     username = raw_input("What is your instagram username? \n>")
     if (username == "q"): sys.exit()
-    password = raw_input("What is your instagram password? \n>")
+    password = getpass.getpass("What is your instagram password? \n>")
     retval = login(driver, username, password)
     if (retval == True): break
     print retval
-'''
-if (False):
-    username = "matteogp_test"
-    password = "test123"
-else:
-    username = "matteo_gp"
-    password = "BSYZfpt78"
 
-login(driver, username, password)
+# get followers/following, compare & print those who don't follow back
 followers = get_followers(driver, username)
-print followers
-'''
-file1 = open("d1.txt")
-file2 = open("d2.txt")
-
-followers = file1.readlines()
-following = file2.readlines()
-
-unfollow = []
-
-def strip_list (lst):
-  alt = 2
-  newlst = []
-  for f in lst:
-    if (alt==3):
-      f.strip()
-      alt = 0
-      newlst.append(f)
-    else:
-      alt+=1
-  return newlst
-
-#followers = strip_list(followers)
-print("--")
-following = strip_list(following)
-
-for account in following:
-  if account not in followers:
-    unfollow.append(account)
-    print(account + "\n")
-'''
+following = get_following(driver, username)
+outliers = compare_ff(followers, following)
+pp = pprint.PrettyPrinter(indent=4)
+pp.pprint(outliers)
